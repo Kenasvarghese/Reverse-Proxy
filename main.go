@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
-	proxy "github.com/Kenasvarghese/Caching-Proxy/proxy"
+	"github.com/Kenasvarghese/Caching-Proxy/middlewares"
+	"github.com/Kenasvarghese/Caching-Proxy/proxy"
 )
 
 func main() {
@@ -24,11 +25,15 @@ func main() {
 		return
 	}
 	proxyHandler := proxy.NewProxyHandler(originURL)
+	wrappedHandler := middlewares.WrapHandler(proxyHandler, middlewares.RequestLogger)
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", *port),
-		Handler: proxyHandler,
+		Handler: wrappedHandler,
 	}
 	log.Printf("proxy is listening on port %d", *port)
 	log.Printf("forward to origin is %s", *origin)
-	server.ListenAndServe()
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Printf("Error listening on port %d: %v", *port, err)
+	}
 }
