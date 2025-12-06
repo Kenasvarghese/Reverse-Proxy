@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/Kenasvarghese/Caching-Proxy/middlewares"
-	"github.com/Kenasvarghese/Caching-Proxy/proxy"
+	"github.com/Kenasvarghese/Caching-Proxy/Internal/middlewares"
+	"github.com/Kenasvarghese/Caching-Proxy/Internal/proxy"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 		log.Printf("Error parsing URL: %v", err)
 		return
 	}
-	proxyHandler := proxy.NewProxyHandler(originURL)
+	proxyHandler := proxy.NewProxy(originURL)
 	wrappedHandler := middlewares.WrapHandler(proxyHandler, middlewares.RequestLogger)
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", *port),
