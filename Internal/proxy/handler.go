@@ -8,7 +8,7 @@ import (
 
 type proxy struct {
 	director    director
-	transporter transporter
+	transporter http.RoundTripper
 }
 
 // ServeHTTP implements the http.handler interface
@@ -16,7 +16,7 @@ type proxy struct {
 func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	req, err := p.director.createRequest(r)
-	resp, err := p.transporter.Do(req)
+	resp, err := p.transporter.RoundTrip(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
