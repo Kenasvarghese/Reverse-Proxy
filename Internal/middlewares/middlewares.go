@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/Kenasvarghese/Caching-Proxy/Internal/rate_limiter"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -26,4 +28,17 @@ func RequestLogger(next http.Handler) http.Handler {
 		next.ServeHTTP(lw, r)
 		log.Printf("Method: %s, Path: %s, Duration: %s, Status: %d", r.Method, r.URL.Path, time.Since(start), lw.status)
 	})
+}
+
+// GetRateLimiterMiddleware returns the middleware with the provided rate limiter
+func GetRateLimiterMiddleware(rl rate_limiter.RateLimiter) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if rl.Allow(r) {
+				next.ServeHTTP(w, r)
+			} else {
+				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+			}
+		})
+	}
 }
