@@ -17,17 +17,17 @@ type singleTargetDirector struct {
 // createRequest creates the new request with the target url and headers
 func (d *singleTargetDirector) createRequest(r *http.Request) (*http.Request, error) {
 	reqURL := d.targetURL.ResolveReference(r.URL)
-	httpReq, err := http.NewRequest(r.Method, reqURL.String(), r.Body)
+	httpReq, err := http.NewRequestWithContext(r.Context(), r.Method, reqURL.String(), r.Body)
 	if err != nil {
 		return nil, err
 	}
-	removeHopByHopHeaders(r.Header)
 	for k, v := range r.Header {
 		httpReq.Header[k] = v
 	}
+	removeHopByHopHeaders(httpReq.Header)
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return nil, err
+		ip = ""
 	}
 	//sets the X-Forwarded-For header with requesters ip
 	httpReq.Header.Set("X-Forwarded-For", ip)

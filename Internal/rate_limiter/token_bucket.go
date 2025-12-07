@@ -9,7 +9,7 @@ import (
 // tokenBucket implements the RateLimiter with token bucket algorithm for rate limiting.
 type tokenBucket struct {
 	bucketSize    uint64
-	ratePerSecond uint64
+	ratePerSecond float64
 	bucket        uint64
 	lastFilledAt  time.Time
 	mu            sync.Mutex
@@ -18,7 +18,7 @@ type tokenBucket struct {
 // newTokenBucket creates a new token bucket rate limiter.
 // bucketSize defines the maximum burst capacity.
 // ratePerSecond defines how many requests are allowed per second.
-func newTokenBucket(bucketSize uint64, ratePerSecond uint64) RateLimiter {
+func newTokenBucket(bucketSize uint64, ratePerSecond float64) RateLimiter {
 	rl := &tokenBucket{
 		bucketSize:    bucketSize,
 		ratePerSecond: ratePerSecond,
@@ -51,7 +51,7 @@ func (t *tokenBucket) Allow(r *http.Request) bool {
 // Must be called with mutex held.
 func (t *tokenBucket) refill() {
 	timePassed := time.Since(t.lastFilledAt)
-	tokensToAdd := uint64(timePassed.Seconds()) * t.ratePerSecond
+	tokensToAdd := uint64(timePassed.Seconds() * t.ratePerSecond)
 	if tokensToAdd < 1 {
 		return
 	}
