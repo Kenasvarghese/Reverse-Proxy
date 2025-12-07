@@ -1,7 +1,6 @@
 package rate_limiter
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -12,6 +11,8 @@ type RateLimiterConfig struct {
 	RateLimiterType    string `split_words:"true"`
 }
 
+const TokenBucketRateLimiterType = "TokenBucket"
+
 type RateLimiter interface {
 	Allow(r *http.Request) bool
 }
@@ -19,12 +20,10 @@ type RateLimiter interface {
 // NewRateLimiter creates a rate limiter based on the specified configuration.
 // Returns a token bucket rate limiter by default.
 func NewRateLimiter(cfg RateLimiterConfig) RateLimiter {
-	fmt.Println(cfg)
 	switch cfg.RateLimiterType {
-	case "Token Bucket":
+	case TokenBucketRateLimiterType:
 		return newTokenBucket(cfg.MaxAllowedRequests, cfg.RequestRate)
 	default:
 		return newTokenBucket(cfg.MaxAllowedRequests, cfg.RequestRate)
-
 	}
 }

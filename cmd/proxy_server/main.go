@@ -1,39 +1,31 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 
+	"github.com/Kenasvarghese/Caching-Proxy/Internal/config"
 	"github.com/Kenasvarghese/Caching-Proxy/Internal/middlewares"
 	"github.com/Kenasvarghese/Caching-Proxy/Internal/proxy"
+	"github.com/Kenasvarghese/Caching-Proxy/Internal/rate_limiter"
 )
 
 func main() {
-	port := flag.Int("port", 8080, "Port to listen on")
-	origin := flag.String("origin", "", "URL to forward requests to")
-	flag.Parse()
-	if *origin == "" {
-		log.Printf("forward to origin is empty")
-		return
-	}
-	originURL, err := url.Parse(*origin)
-	if err != nil {
-		log.Printf("Error parsing URL: %v", err)
-		return
-	}
-	proxyHandler := proxy.NewProxy(originURL)
-	wrappedHandler := middlewares.WrapHandler(proxyHandler, middlewares.RequestLogger)
+	cfg := config.LoadConfig()
+	rl := rate_limiter.NewRateLimiter(cfg.RateLimiterConfig)
+	proxyHandler := proxy.NewProxy(cfg.TransportConfig, cfg.GetOriginURL())
+	wrappedHandler := middlewares.WrapHandler(proxyHandler,
+		middlewares.RequestLogger,
+		middlewares.GetRateLimiterMiddleware(rl))
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", *port),
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: wrappedHandler,
 	}
-	log.Printf("proxy is listening on port %d", *port)
-	log.Printf("forward to origin is %s", *origin)
-	err = server.ListenAndServe()
+	log.Printf("proxy is listening on port %d", cfg.Port)
+	log.Printf("forward to origin is %s", cfg.Origin)
+	err := server.ListenAndServe()
 	if err != nil {
-		log.Printf("Error listening on port %d: %v", *port, err)
+		log.Printf("Error listening on port %d: %v", cfg.Port, err)
 	}
 }

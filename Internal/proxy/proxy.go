@@ -5,11 +5,11 @@ import (
 	"net/url"
 )
 
-func NewProxy(targetURL *url.URL) http.Handler {
+func NewProxy(cfg TransportConfig, targetURL *url.URL) http.Handler {
 	return &proxy{
 		director: &singleTargetDirector{
 			targetURL: targetURL,
 		},
-		transporter: newTransporter(),
+		transporter: newTransporter(cfg),
 	}
 }
