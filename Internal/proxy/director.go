@@ -6,12 +6,12 @@ import (
 	"net/url"
 )
 
-type singleTargetDirector struct {
-	targetURL *url.URL
-}
-
 type director interface {
 	createRequest(r *http.Request) (*http.Request, error)
+}
+
+type singleTargetDirector struct {
+	targetURL *url.URL
 }
 
 // createRequest creates the new request with the target url and headers
