@@ -1,14 +1,16 @@
-package rate_limiter
+package ratelimiter
 
 import (
 	"net/http"
+	"time"
 )
 
 // RateLimiterConfig holds configuration for rate limiting behavior
 type RateLimiterConfig struct {
-	MaxAllowedRequests uint64  `default:"150" split_words:"true"`
-	RequestRatePerSec  float64 `default:"50" split_words:"true"`
-	RateLimiterType    string  `split_words:"true"`
+	MaxAllowedRequests uint64        `default:"150" split_words:"true"`
+	RequestRatePerSec  float64       `default:"50" split_words:"true"`
+	RateLimiterType    string        `split_words:"true"`
+	TTL                time.Duration `default:"1m" split_words:"true"`
 }
 
 type RateLimiter interface {

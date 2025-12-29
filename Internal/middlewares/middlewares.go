@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/rate_limiter"
+	"github.com/Kenasvarghese/Reverse-Proxy/Internal/ratelimiter"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -31,7 +31,7 @@ func RequestLogger(next http.Handler) http.Handler {
 }
 
 // GetRateLimiterMiddleware returns the middleware with the provided rate limiter
-func GetRateLimiterMiddleware(rl rate_limiter.RateLimiter) Middleware {
+func GetRateLimiterMiddleware(rl ratelimiter.RateLimiter) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if rl.Allow(r) {

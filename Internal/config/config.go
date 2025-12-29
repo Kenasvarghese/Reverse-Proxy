@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/Kenasvarghese/Reverse-Proxy/Internal/proxy"
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/rate_limiter"
+	"github.com/Kenasvarghese/Reverse-Proxy/Internal/ratelimiter"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -15,7 +15,7 @@ type Config struct {
 	Port      int    `default:"8080" split_words:"true"`
 	originUrl *url.URL
 
-	rate_limiter.RateLimiterConfig
+	ratelimiter.RateLimiterConfig
 
 	proxy.TransportConfig
 }
