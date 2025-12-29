@@ -8,16 +8,19 @@ import (
 	"github.com/Kenasvarghese/Reverse-Proxy/Internal/config"
 	"github.com/Kenasvarghese/Reverse-Proxy/Internal/middlewares"
 	"github.com/Kenasvarghese/Reverse-Proxy/Internal/proxy"
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/rate_limiter"
+	"github.com/Kenasvarghese/Reverse-Proxy/Internal/ratelimiter"
 )
 
 func main() {
 	cfg := config.LoadConfig()
-	rl := rate_limiter.NewRateLimiter(cfg.RateLimiterConfig)
+	rl := ratelimiter.NewRateLimiter(cfg.RateLimiterConfig)
+	ipRL := ratelimiter.NewIPRateLimiter(cfg.RateLimiterConfig)
 	proxyHandler := proxy.NewProxy(cfg.TransportConfig, cfg.GetOriginURL())
 	wrappedHandler := middlewares.WrapHandler(proxyHandler,
 		middlewares.RequestLogger,
-		middlewares.GetRateLimiterMiddleware(rl))
+		middlewares.GetRateLimiterMiddleware(ipRL),
+		middlewares.GetRateLimiterMiddleware(rl),
+	)
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: wrappedHandler,
