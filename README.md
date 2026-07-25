@@ -62,7 +62,7 @@ Token bucket algorithm with configurable burst and sustained rates:
 ## Project Structure
 ```
 ├── cmd/proxy/main.go           # Entry point
-├── Internal/
+├── internal/
 │   ├── config/                 # Configuration management
 │   ├── middlewares/            # Logging, rate limiting
 │   ├── proxy/                  # Reverse proxy, transport

@@ -1,0 +1,58 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/build/
+
+# Go
+*.test
+*.out
+vendor/
+
+# Go coverage
+coverage.out
+coverage.html
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Environment / secrets
+.env
+.env.*
+*.secret
+*.key
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Prometheus
+prometheus/data/
+prometheus/*.db
+*.tsdb/
+
+# Grafana
+grafana/data/
+grafana/*.db
+
+# Docker
+docker-compose.override.yml
+
+# OS generated
+Thumbs.db

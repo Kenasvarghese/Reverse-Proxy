@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/ratelimiter"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/monitoring"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/ratelimiter"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -39,6 +40,39 @@ func GetRateLimiterMiddleware(rl ratelimiter.RateLimiter) Middleware {
 			} else {
 				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			}
+		})
+	}
+}
+
+// GetRateLimiterMiddlewareWithObserver returns the middleware with the provided rate limiter
+func GetRateLimiterMiddlewareWithObserver(rl ratelimiter.RateLimiter, ob *monitoring.Observer) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			if rl.Allow(r) {
+				ob.TimeForRatelimiterCheck.WithLabelValues("allowed").Observe(float64(time.Since(start).Nanoseconds()))
+				next.ServeHTTP(w, r)
+			} else {
+				ob.TimeForRatelimiterCheck.WithLabelValues("denied").Observe(float64(time.Since(start).Nanoseconds()))
+				ob.GlobalRateLimitedCount.Inc()
+				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+			}
+		})
+	}
+}
+
+// GetObservabilityMiddleware returns the middleware for observability
+func GetObservabilityMiddleware(ob *monitoring.Observer) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			ob.InflightReq.Inc()
+			defer ob.InflightReq.Dec()
+			ob.ReqCount.Inc()
+
+			next.ServeHTTP(w, r)
+
+			ob.ReqDuration.Observe(float64(time.Since(start).Milliseconds()))
 		})
 	}
 }
