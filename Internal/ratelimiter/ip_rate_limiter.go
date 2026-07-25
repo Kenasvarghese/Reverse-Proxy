@@ -7,6 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/monitoring"
 )
 
 type rateLimit struct {
@@ -17,14 +19,16 @@ type rateLimit struct {
 type ipRateLimiter struct {
 	rateLimiterConfig RateLimiterConfig
 	ipRateLimit       sync.Map
+	ob                *monitoring.Observer
 	ttl               time.Duration
 }
 
 // NewIPRateLimiter creates a new IP rate limiter
-func NewIPRateLimiter(rateLimiterConfig RateLimiterConfig) RateLimiter {
+func NewIPRateLimiter(rateLimiterConfig RateLimiterConfig, ob *monitoring.Observer) RateLimiter {
 	rl := &ipRateLimiter{
 		rateLimiterConfig: rateLimiterConfig,
 		ipRateLimit:       sync.Map{},
+		ob:                ob,
 		ttl:               rateLimiterConfig.TTL,
 	}
 	go rl.CleanUp()
@@ -33,6 +37,7 @@ func NewIPRateLimiter(rateLimiterConfig RateLimiterConfig) RateLimiter {
 
 // Allow checks if a request should be allowed based on available tokens.
 func (p *ipRateLimiter) Allow(r *http.Request) bool {
+	start := time.Now()
 	ip := clientIP(r)
 	now := time.Now().Unix()
 	newRL := &rateLimit{
@@ -40,10 +45,19 @@ func (p *ipRateLimiter) Allow(r *http.Request) bool {
 		rateLimiter: NewRateLimiter(p.rateLimiterConfig),
 	}
 	newRL.lastUsed.Store(now)
-	value, _ := p.ipRateLimit.LoadOrStore(ip, newRL)
+	value, loaded := p.ipRateLimit.LoadOrStore(ip, newRL)
 	rl := value.(*rateLimit)
 	rl.lastUsed.Store(now)
-	return rl.rateLimiter.Allow(r)
+	if !loaded {
+		p.ob.ActiveIpCount.Inc()
+	}
+	if !rl.rateLimiter.Allow(r) {
+		p.ob.IpRateLimitedCount.Inc()
+		p.ob.TimeForRatelimiterCheck.WithLabelValues("denied").Observe(float64(time.Since(start).Nanoseconds()))
+		return false
+	}
+	p.ob.TimeForRatelimiterCheck.WithLabelValues("allowed").Observe(float64(time.Since(start).Nanoseconds()))
+	return true
 }
 
 // CleanUp removes expired rate limiters
@@ -55,6 +69,7 @@ func (p *ipRateLimiter) CleanUp() {
 		p.ipRateLimit.Range(func(key, value any) bool {
 			if value.(*rateLimit).lastUsed.Load() < time.Now().Add(-p.ttl).Unix() {
 				p.ipRateLimit.Delete(key)
+				p.ob.ActiveIpCount.Dec()
 			}
 			return true
 		})

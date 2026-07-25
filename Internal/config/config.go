@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/proxy"
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/ratelimiter"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/proxy"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/ratelimiter"
 	"github.com/kelseyhightower/envconfig"
 )
 

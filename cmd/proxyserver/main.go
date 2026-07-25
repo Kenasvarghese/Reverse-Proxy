@@ -5,21 +5,24 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/config"
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/middlewares"
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/proxy"
-	"github.com/Kenasvarghese/Reverse-Proxy/Internal/ratelimiter"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/config"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/middlewares"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/monitoring"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/proxy"
+	"github.com/Kenasvarghese/Reverse-Proxy/internal/ratelimiter"
 )
 
 func main() {
 	cfg := config.LoadConfig()
+	ob := monitoring.NewObserver()
 	rl := ratelimiter.NewRateLimiter(cfg.RateLimiterConfig)
-	ipRL := ratelimiter.NewIPRateLimiter(cfg.RateLimiterConfig)
+	ipRL := ratelimiter.NewIPRateLimiter(cfg.RateLimiterConfig, ob)
 	proxyHandler := proxy.NewProxy(cfg.TransportConfig, cfg.GetOriginURL())
 	wrappedHandler := middlewares.WrapHandler(proxyHandler,
+		middlewares.GetObservabilityMiddleware(ob),
 		middlewares.RequestLogger,
 		middlewares.GetRateLimiterMiddleware(ipRL),
-		middlewares.GetRateLimiterMiddleware(rl),
+		middlewares.GetRateLimiterMiddlewareWithObserver(rl, ob),
 	)
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
