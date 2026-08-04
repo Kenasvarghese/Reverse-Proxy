@@ -20,9 +20,9 @@ type tokenBucket struct {
 // ratePerSecond defines how many requests are allowed per second.
 func newTokenBucket(bucketSize uint64, ratePerSecond float64) RateLimiter {
 	rl := &tokenBucket{
-		bucketSize:    bucketSize,
-		ratePerSecond: ratePerSecond,
-		bucket:        bucketSize,
+		bucketSize:    10,
+		ratePerSecond: 10,
+		bucket:        10,
 		lastFilledAt:  time.Now(),
 		mu:            sync.Mutex{},
 	}
@@ -31,6 +31,7 @@ func newTokenBucket(bucketSize uint64, ratePerSecond float64) RateLimiter {
 	}
 	if bucketSize > 0 {
 		rl.bucket = bucketSize
+		rl.bucketSize = bucketSize
 	}
 	return rl
 }
